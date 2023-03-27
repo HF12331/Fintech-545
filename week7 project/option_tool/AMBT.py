@@ -1,6 +1,8 @@
 import numpy as np
 import math
+import scipy.stats as st
 from typing import List,Tuple
+from scipy.optimize import fsolve
 
 def nnodes(nperiods):
     return (nperiods + 2) * (nperiods + 1) // 2
@@ -78,5 +80,17 @@ def bt_american(is_call: bool, price, strike, ttm, r_f, div_rate,
             option_values[node_idx(i, j)] = max(value_exercise, value_no_exercise)
     
     return option_values[0]
+
+def am_bs(S,K,T,r,CR,v,option):
+    d1 = (np.log(S/K)+(r-CR+v**2/2)*T)/(v*np.sqrt(T))
+    d2 = d1-v*np.sqrt(T)
+    if option == True:
+        return S*np.exp(-CR*T)*st.norm.cdf(d1)-K*np.exp(-r*T)*st.norm.cdf(d2)
+    elif option == False:
+        return K*np.exp(-r*T)*st.norm.cdf(-d2)-S*np.exp(-CR*T)*st.norm.cdf(-d1)
+    
+def implied_vol(S, K, T,r,q,opt_price,opt=True):
+    volatility = lambda x: am_bs(S,K,T,r,q,x,opt) -opt_price
+    return fsolve(volatility,x0 = 0.5)[0]
 
 
